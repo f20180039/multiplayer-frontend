@@ -9,13 +9,16 @@ const JoinRoom = () => {
     try {
       const url = new URL(roomLink);
       const pathParts = url.pathname.split("/").filter(Boolean);
-      if (pathParts.length === 3 && pathParts[0] === "room") {
-        navigate(`/room/${pathParts[1]}/${pathParts[2]}`);
+      if (pathParts.length === 2 && pathParts[0] === "room") {
+        const [gameId, roomId] = pathParts;
+        navigate(`/room/${gameId}/${roomId}`);
       } else {
-        alert("Invalid room link");
+        alert(
+          "Invalid room link format. Ensure it's of the form /room/:gameId/:roomId"
+        );
       }
-    } catch {
-      alert("Invalid URL");
+    } catch (error) {
+      alert("Invalid URL. Please make sure the URL is correct." + error);
     }
   };
 

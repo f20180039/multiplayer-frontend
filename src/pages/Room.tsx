@@ -1,22 +1,32 @@
 import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { io, Socket } from "socket.io-client";
+import { io } from "socket.io-client";
 
-let socket: Socket;
+const URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:4000";
 
 const Room = () => {
   const { gameId, roomId } = useParams();
   const [connected, setConnected] = useState(false);
 
   useEffect(() => {
-    socket = io("http://localhost:4000"); // Change to your backend URL if needed
+    // Initialize socket connection within the component
+    const socket = io(URL);
 
+    // Join the room as soon as the socket is connected
     socket.emit("join_room", { gameId, roomId });
 
-    socket.on("room_joined", () => {
+    // Listen for the "room_joined" event
+    socket.on("room_joined", ({ roomId }) => {
+      console.log(`Joined room: ${roomId}`);
       setConnected(true);
     });
 
+    socket.on("connect_error", (error) => {
+      console.error("Connection Error:", error);
+      setConnected(false);
+    });
+
+    // Clean up the socket connection when the component unmounts or dependencies change
     return () => {
       socket.disconnect();
     };
