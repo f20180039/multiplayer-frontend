@@ -2,11 +2,7 @@
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { v4 as uuidv4 } from "uuid";
-
-const games = [
-  { id: "tic-tac-toe", name: "Tic Tac Toe" },
-  { id: "pig-game", name: "Pig Game" },
-];
+import { GamesArray } from "../constants";
 
 const GameList = () => {
   const navigate = useNavigate();
@@ -22,37 +18,36 @@ const GameList = () => {
   };
 
   return (
-    <div style={{ padding: "2rem" }}>
-      <h1>🎮 Choose a Game</h1>
+    <div className="ans-p-8">
+      <h1 className="ans-text-2xl ans-font-bold">🎮 Choose a Game</h1>
 
       <input
         type="text"
         placeholder="Your name"
         value={playerName}
         onChange={(e) => setPlayerName(e.target.value)}
-        style={{
-          padding: "0.5rem",
-          marginBottom: "1rem",
-          width: "100%",
-          maxWidth: "300px",
-          display: "block",
-        }}
+        className="ans-p-2 ans-mb-4 ans-w-full ans-max-w-md ans-text-Blue_gray-800"
       />
 
-      <ul>
-        {games.map((game) => (
-          <li key={game.id} style={{ marginBottom: "1rem" }}>
+      <ul className="ans-list-none">
+        {GamesArray.map((game) => (
+          <li key={game.id} className="ans-mb-4">
             <strong>{game.name}</strong>
             <button
               onClick={() => handleCreateRoom(game.id)}
-              style={{ marginLeft: "1rem" }}
+              className="ans-bg-Blue-500 ans-text-White ans-p-2 ans-ml-4 ans-rounded"
             >
               Create Room
             </button>
           </li>
         ))}
       </ul>
-      <button onClick={() => navigate("/join")}>🔗 Join via Link</button>
+      <button
+        onClick={() => navigate("/join")}
+        className="ans-bg-Success-500 ans-text-White ans-p-2 ans-rounded"
+      >
+        🔗 Join via Link
+      </button>
     </div>
   );
 };

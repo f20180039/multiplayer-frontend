@@ -4,6 +4,11 @@ export enum GameId {
   // ...
 }
 
+export const GamesArray = [
+  { id: "tic-tac-toe", name: "Tic Tac Toe" },
+  { id: GameId.PIG_GAME, name: "Pig Game" },
+];
+
 export const SOCKET_EVENTS = {
   JOIN_ROOM: "join_room",
   ROOM_JOINED: "room_joined",
@@ -17,5 +22,6 @@ export const SOCKET_EVENTS = {
     NEW_BANNED: "pig:new-banned",
     UPDATE: "pig:update",
     ROOM_CLOSED: "pig:room-closed",
+    GAME_START: "pig:game-start",
   },
 } as const;
