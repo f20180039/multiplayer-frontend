@@ -1,15 +1,13 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import GameList from "./pages/GameList";
-import JoinRoom from "./components/JoinRoom";
 import Room from "./pages/Room";
+import GameLobby from "./pages/GameLobby";
 
 function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<GameList />} />
+        <Route path="/" element={<GameLobby />} />
         <Route path="/room/:gameId/:roomId" element={<Room />} />
-        <Route path="/join" element={<JoinRoom />} />
       </Routes>
     </Router>
   );

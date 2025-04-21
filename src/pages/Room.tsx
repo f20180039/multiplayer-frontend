@@ -1,86 +1,115 @@
 // src/pages/Room.tsx
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
+import { PlayersList } from "../components/PlayersList";
+import { PigGameRoom } from "../components/games/pig/PigGameRoom";
 import { usePigGameSocket } from "../hooks/usePigGameSocket";
-import { useMemo } from "react";
+import { useRoomSocket } from "../hooks/useRoomSocket";
 import { GameId } from "../constants";
+import { useChatSocket } from "../hooks/useChatSocket";
+import { useState } from "react";
 
 const Room = () => {
   const { gameId, roomId } = useParams();
-  const playerName = useMemo(
-    () => "Player_" + Math.floor(Math.random() * 1000),
-    []
-  );
-  const { roomState, connected, rollDice, bankScore, newBanned, isMyTurn } =
+  const [searchParams] = useSearchParams();
+  const playerName =
+    searchParams.get("name") || "Player_" + Math.floor(Math.random() * 1000);
+
+  const { players, connected } = useRoomSocket(roomId!, gameId!, playerName);
+  const { roomState, rollDice, bankScore, newBanned, isMyTurn } =
     usePigGameSocket(roomId!, playerName);
+
+  const { messages, sendMessage } = useChatSocket(roomId!, playerName);
+  const [chatInput, setChatInput] = useState("");
+  const [copied, setCopied] = useState(false);
 
   const currentPlayer =
     roomState?.players[roomState.activePlayerIndex]?.name || "Unknown";
-    
   const isGameOver = Boolean(roomState?.winner);
+
+  // 📋 Copy invite link
+  const handleCopyLink = () => {
+    const url = `${window.location.origin}/room/${gameId}/${roomId}?name=YourName`;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  const handleSend = () => {
+    if (chatInput.trim()) {
+      sendMessage(chatInput);
+      setChatInput("");
+    }
+  };
 
   return (
     <div className="ans-p-8 ans-text-center">
-      <h2 className="ans-text-2xl ans-font-bold">Game: {gameId}</h2>
+      <h2 className="ans-text-2xl ans-font-inter-3">Game: {gameId}</h2>
       <p className="ans-text-sm">Room ID: {roomId}</p>
       <p className="ans-mt-2 ans-text-green-600">
         Status: {connected ? "Connected ✅" : "Connecting..."}
       </p>
 
-      {gameId === GameId.PIG_GAME && roomState && (
-        <div className="ans-mt-6 ans-space-y-4">
-          <h3 className="ans-text-xl ans-font-semibold">
-            🎲 Dice: {roomState.diceRoll ?? "-"}
-          </h3>
-          <p>Banned Number: {roomState.bannedNumber}</p>
-          <p>
-            Current Turn:{" "}
-            <span className="ans-font-medium ans-text-blue-600">
-              {currentPlayer}
-            </span>
-          </p>
+      {/* 📎 Copy Link */}
+      <div className="ans-mt-4">
+        <button
+          onClick={handleCopyLink}
+          className="ans-bg-Blue-600 ans-text-White ans-px-4 ans-py-1 ans-rounded hover:ans-bg-Blue-700"
+        >
+          {copied ? "Link Copied!" : "Copy Invite Link"}
+        </button>
+      </div>
 
-          <ul className="ans-list-disc ans-list-inside ans-text-left ans-max-w-md ans-mx-auto">
-            {roomState.players.map((p) => (
-              <li key={p.id}>
-                <strong>{p.name}</strong> — Frozen: {p.frozenScore}, Temp:{" "}
-                {p.tempScore}
-              </li>
-            ))}
-          </ul>
-
-          {roomState.winner && (
-            <p className="ans-text-lg ans-font-bold ans-text-purple-600">
-              🎉 Winner: {roomState.winner}
-            </p>
-          )}
-
-          {!isGameOver && (
-            <div className="ans-flex ans-gap-4 ans-justify-center ans-mt-4">
-              <button
-                onClick={rollDice}
-                disabled={!isMyTurn}
-                className="ans-bg-blue-500 ans-text-white ans-px-4 ans-py-2 ans-rounded disabled:ans-opacity-50 disabled:ans-cursor-not-allowed"
-              >
-                Roll
-              </button>
-              <button
-                onClick={bankScore}
-                disabled={!isMyTurn}
-                className="ans-bg-green-500 ans-text-white ans-px-4 ans-py-2 ans-rounded disabled:ans-opacity-50 disabled:ans-cursor-not-allowed"
-              >
-                Bank
-              </button>
-              <button
-                onClick={newBanned}
-                disabled={!isMyTurn}
-                className="ans-bg-red-500 ans-text-white ans-px-4 ans-py-2 ans-rounded disabled:ans-opacity-50 disabled:ans-cursor-not-allowed"
-              >
-                New Banned
-              </button>
-            </div>
-          )}
-        </div>
+      {players && Object.keys(players).length > 0 && (
+        <PlayersList
+          players={Object.entries(players).map(([id, name]) => ({
+            id,
+            name,
+          }))}
+        />
       )}
+
+      {gameId === GameId.PIG_GAME && roomState && (
+        <PigGameRoom
+          roomState={roomState}
+          rollDice={rollDice}
+          bankScore={bankScore}
+          newBanned={newBanned}
+          isMyTurn={isMyTurn}
+          currentPlayer={currentPlayer}
+          isGameOver={isGameOver}
+        />
+      )}
+      {/* 💬 Chat Section */}
+      <div className="ans-mt-6 ans-max-w-xl ans-mx-auto ans-text-left">
+        <h3 className="ans-text-2 ans-font-inter-2">Chat</h3>
+        <div className="ans-border ans-rounded-md ans-p-2 ans-h-48 ans-overflow-y-auto ans-mb-2 ans-bg-White">
+          {messages.map((msg, idx) => (
+            <div key={idx} className="ans-text-sm ans-text-Blue_gray-800">
+              <span className="ans-font-inter-3 ans-text-Blue_gray-800">
+                {msg.playerName}:
+              </span>{" "}
+              {msg.message}
+            </div>
+          ))}
+        </div>
+        <div className="ans-flex ans-gap-2">
+          <input
+            type="text"
+            value={chatInput}
+            onChange={(e) => setChatInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleSend()}
+            placeholder="Type your message..."
+            className="ans-border ans-rounded ans-p-1 ans-flex-1 ans-text-Blue_gray-800"
+          />
+          <button
+            onClick={handleSend}
+            className="ans-bg-Blue-500 ans-text-White ans-px-4 ans-rounded"
+          >
+            Send
+          </button>
+        </div>
+      </div>
     </div>
   );
 };

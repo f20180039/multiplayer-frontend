@@ -4,6 +4,8 @@ export interface Player {
   name: string;
   frozenScore: number;
   tempScore: number;
+  totalScore: number;
+  isTurn: boolean;
 }
 
 export interface PigRoomState {
@@ -11,6 +13,17 @@ export interface PigRoomState {
   activePlayerIndex: number;
   diceRoll: number;
   bannedNumber: number;
-  winner: string | null;
+  winnerId: string | null;
   gameStarted: boolean;
+  gameOver: boolean;
+  currentRound: number;
 }
+export interface RoomPlayer {
+  id: string;
+  name: string;
+  // Game-specific fields (optional)
+  frozenScore?: number;
+  tempScore?: number;
+  // You can add other common fields here if needed
+}
+
