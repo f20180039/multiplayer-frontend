@@ -44,9 +44,9 @@ const Room = () => {
 
   return (
     <div className="ans-p-8 ans-text-center">
-      <h2 className="ans-text-2xl ans-font-inter-3">Game: {gameId}</h2>
-      <p className="ans-text-sm">Room ID: {roomId}</p>
-      <p className="ans-mt-2 ans-text-green-600">
+      <h2 className="ans-text-2 ans-font-inter-3">Game: {gameId}</h2>
+      <p className="ans-text-0">Room ID: {roomId}</p>
+      <p className="ans-mt-2 ans-text-Success-600">
         Status: {connected ? "Connected ✅" : "Connecting..."}
       </p>
 
@@ -60,54 +60,64 @@ const Room = () => {
         </button>
       </div>
 
-      {players && Object.keys(players).length > 0 && (
-        <PlayersList
-          players={Object.entries(players).map(([id, name]) => ({
-            id,
-            name,
-          }))}
-        />
-      )}
-
-      {gameId === GameId.PIG_GAME && roomState && (
-        <PigGameRoom
-          roomState={roomState}
-          rollDice={rollDice}
-          bankScore={bankScore}
-          newBanned={newBanned}
-          isMyTurn={isMyTurn}
-          currentPlayer={currentPlayer}
-          isGameOver={isGameOver}
-        />
-      )}
-      {/* 💬 Chat Section */}
-      <div className="ans-mt-6 ans-max-w-xl ans-mx-auto ans-text-left">
-        <h3 className="ans-text-2 ans-font-inter-2">Chat</h3>
-        <div className="ans-border ans-rounded-md ans-p-2 ans-h-48 ans-overflow-y-auto ans-mb-2 ans-bg-White">
-          {messages.map((msg, idx) => (
-            <div key={idx} className="ans-text-sm ans-text-Blue_gray-800">
-              <span className="ans-font-inter-3 ans-text-Blue_gray-800">
-                {msg.playerName}:
-              </span>{" "}
-              {msg.message}
-            </div>
-          ))}
+      {/* Flexbox Layout */}
+      <div className="ans-flex ans-justify-between ans-mt-8">
+        {/* Left: Player List */}
+        <div className="ans-w-1/4 ans-p-4">
+          {players && Object.keys(players).length > 0 && (
+            <PlayersList
+              players={Object.entries(players).map(([id, name]) => ({
+                id,
+                name,
+              }))}
+            />
+          )}
         </div>
-        <div className="ans-flex ans-gap-2">
-          <input
-            type="text"
-            value={chatInput}
-            onChange={(e) => setChatInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSend()}
-            placeholder="Type your message..."
-            className="ans-border ans-rounded ans-p-1 ans-flex-1 ans-text-Blue_gray-800"
-          />
-          <button
-            onClick={handleSend}
-            className="ans-bg-Blue-500 ans-text-White ans-px-4 ans-rounded"
-          >
-            Send
-          </button>
+
+        {/* Middle: Game Area */}
+        <div className="ans-w-1/2 ans-p-4">
+          {gameId === GameId.PIG_GAME && roomState && (
+            <PigGameRoom
+              roomState={roomState}
+              rollDice={rollDice}
+              bankScore={bankScore}
+              newBanned={newBanned}
+              isMyTurn={isMyTurn}
+              currentPlayer={currentPlayer}
+              isGameOver={isGameOver}
+            />
+          )}
+        </div>
+
+        {/* Right: Chat Section */}
+        <div className="ans-w-1/4 ans-p-4">
+          <h3 className="ans-text-2 ans-font-inter-2">Chat</h3>
+          <div className="ans-border ans-rounded-md ans-p-2 ans-h-48 ans-overflow-y-auto ans-mb-2 ans-bg-White ans-text-left">
+            {messages.map((msg, idx) => (
+              <div key={idx} className="ans-text-0 ans-text-Blue_gray-800">
+                <span className="ans-font-inter-3 ans-text-Blue_gray-800">
+                  {msg.playerName}:
+                </span>{" "}
+                {msg.message}
+              </div>
+            ))}
+          </div>
+          <div className="ans-flex ans-gap-2">
+            <input
+              type="text"
+              value={chatInput}
+              onChange={(e) => setChatInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSend()}
+              placeholder="Type your message..."
+              className="ans-border ans-rounded ans-p-1 ans-flex-1 ans-text-Blue_gray-800"
+            />
+            <button
+              onClick={handleSend}
+              className="ans-bg-Blue-500 ans-text-White ans-px-4 ans-rounded"
+            >
+              Send
+            </button>
+          </div>
         </div>
       </div>
     </div>
