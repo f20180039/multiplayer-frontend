@@ -1,13 +1,11 @@
 // src/hooks/usePigGameSocket.ts
 import { useEffect, useState } from "react";
-import { io, Socket } from "socket.io-client";
 import { SOCKET_EVENTS } from "../constants";
+import { useSocket } from "../context/SocketContext";
 import { PigRoomState } from "../types/pigTypes";
 
-const URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:4000";
-
 export const usePigGameSocket = (roomId: string, playerName: string) => {
-  const [socket, setSocket] = useState<Socket | null>(null);
+  const socket = useSocket();
   const [roomState, setRoomState] = useState<PigRoomState | null>(null);
   const [connected, setConnected] = useState(false);
 
@@ -15,39 +13,37 @@ export const usePigGameSocket = (roomId: string, playerName: string) => {
     roomState?.players[roomState.activePlayerIndex]?.id === socket?.id;
 
   useEffect(() => {
-    const s = io(URL);
-    setSocket(s);
+    if (!roomId || !playerName || !socket) return;
 
-    s.on("connect", () => {
-      setConnected(true);
-      // Emit JOIN_ROOM only after socket connects
-      if (roomId && playerName) {
-        s.emit(SOCKET_EVENTS.JOIN_ROOM, {
-          gameId: "pig-game",
-          roomId,
-          playerName,
-        });
-      }
+    if (!socket.connected) {
+      socket.connect();
+    }
+
+    socket.emit(SOCKET_EVENTS.JOIN_ROOM, {
+      gameId: "pig-game",
+      roomId,
+      playerName,
     });
 
-    s.on(SOCKET_EVENTS.PIG.UPDATE, (room: PigRoomState) => {
+    socket.on(SOCKET_EVENTS.PIG.UPDATE, (room: PigRoomState) => {
       console.log("Room State Updated:", room);
       setRoomState(room);
     });
 
-    s.on(SOCKET_EVENTS.PIG.ROOM_CLOSED, () => {
+    socket.on(SOCKET_EVENTS.PIG.ROOM_CLOSED, () => {
       alert("Room closed. All players left.");
       setRoomState(null);
     });
 
-    s.on("disconnect", () => {
-      setConnected(false);
-    });
+    socket.on("connect", () => setConnected(true));
+    socket.on("disconnect", () => setConnected(false));
 
     return () => {
-      s.disconnect();
+      socket.off(SOCKET_EVENTS.PIG.UPDATE);
+      socket.off(SOCKET_EVENTS.PIG.ROOM_CLOSED);
+      socket.disconnect();
     };
-  }, [roomId, playerName]);
+  }, [roomId, playerName, socket]);
 
   const rollDice = () => socket?.emit(SOCKET_EVENTS.PIG.ROLL_DICE, { roomId });
   const bankScore = () =>
@@ -57,7 +53,6 @@ export const usePigGameSocket = (roomId: string, playerName: string) => {
 
   return {
     isMyTurn,
-    socket,
     roomState,
     connected,
     rollDice,

@@ -15,7 +15,7 @@ export interface ClientToServerEvents {
 export interface ServerToClientEvents {
   [SOCKET_EVENTS.USER_JOINED]: (userId: string) => void;
   [SOCKET_EVENTS.ROOM_JOINED]: (data: { roomId: string }) => void;
-  [SOCKET_EVENTS.PIG.UPDATE]: (state: any) => void;
+  // [SOCKET_EVENTS.PIG.UPDATE]: (state: any) => void;
 }
 
 // Room state interface should be aligned with the backend RoomState

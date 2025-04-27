@@ -9,7 +9,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   const [socket, setSocket] = useState<Socket | null>(null);
 
   useEffect(() => {
-    const s = io(URL);
+    const s = io(URL, { autoConnect: false }); // Delay connection
     setSocket(s);
 
     return () => {

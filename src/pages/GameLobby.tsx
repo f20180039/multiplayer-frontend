@@ -9,15 +9,13 @@ const GameLobby = () => {
   const navigate = useNavigate();
   const [playerName, setPlayerName] = useState("");
   const [roomLink, setRoomLink] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const savedName = localStorage.getItem(PLAYER_NAME_KEY);
-    if (savedName) {
-      setPlayerName(savedName);
-    }
+    if (savedName) setPlayerName(savedName);
   }, []);
 
-  // Save player name to localStorage when it changes
   useEffect(() => {
     if (playerName.trim()) {
       localStorage.setItem(PLAYER_NAME_KEY, playerName.trim());
@@ -30,12 +28,21 @@ const GameLobby = () => {
       return;
     }
     const roomId = uuidv4();
-    navigate(
-      `/room/${gameId}/${roomId}?name=${encodeURIComponent(playerName)}`
-    );
+    navigate(`/room/${gameId}/${roomId}?name=${encodeURIComponent(playerName)}`);
   };
 
-  const handleJoinRoom = () => {
+  const checkRoomExistence = async (gameId: string, roomId: string) => {
+    try {
+      const res = await fetch(
+        `/api/check-room-existence/${gameId}/${roomId}`
+      );
+      return res.ok;
+    } catch {
+      return false;
+    }
+  };
+
+  const handleJoinRoom = async () => {
     try {
       let gameId = "";
       let roomId = "";
@@ -47,7 +54,7 @@ const GameLobby = () => {
         gameId = parts[roomIndex + 1];
         roomId = parts[roomIndex + 2];
       } else {
-        gameId = GameId.PIG_GAME; // fallback
+        gameId = GameId.PIG_GAME;
         roomId = roomLink.trim();
       }
 
@@ -55,17 +62,26 @@ const GameLobby = () => {
         alert("Invalid room link. Format should be /room/:gameId/:roomId");
         return;
       }
-
       if (!playerName.trim()) {
         alert("Please enter your name before joining.");
         return;
       }
 
-      navigate(
-        `/room/${gameId}/${roomId}?name=${encodeURIComponent(playerName)}`
-      );
+      setIsLoading(true);
+      const exists = await checkRoomExistence(gameId, roomId);
+      setIsLoading(false);
+
+      if (!exists) {
+        alert("This room has been disbanded or doesn't exist.");
+        return;
+      }
+
+      // Save player name for refresh/rejoin
+      localStorage.setItem(PLAYER_NAME_KEY, playerName.trim());
+      navigate(`/room/${gameId}/${roomId}?name=${encodeURIComponent(playerName)}`);
     } catch (error) {
       alert("Invalid input. Please enter a valid URL or room ID. " + error);
+      setIsLoading(false);
     }
   };
 
@@ -98,8 +114,9 @@ const GameLobby = () => {
         <button
           onClick={handleJoinRoom}
           className="ans-bg-Success-500 hover:ans-bg-Success-600 ans-transition-colors ans-text-White ans-px-4 ans-py-2 ans-rounded-lg ans-font-inter-1"
+          disabled={isLoading}
         >
-          Join Room
+          {isLoading ? "Checking..." : "Join Room"}
         </button>
       </div>
 

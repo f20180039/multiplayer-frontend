@@ -41,6 +41,8 @@ const Room = () => {
       setChatInput("");
     }
   };
+  if (!connected)
+    return <p className="ans-text-Error-500">Connecting to room...</p>;
 
   return (
     <div className="ans-p-8 ans-text-center">
@@ -65,12 +67,7 @@ const Room = () => {
         {/* Left: Player List */}
         <div className="ans-w-1/4 ans-p-4">
           {players && Object.keys(players).length > 0 && (
-            <PlayersList
-              players={Object.entries(players).map(([id, name]) => ({
-                id,
-                name,
-              }))}
-            />
+            <PlayersList players={players} />
           )}
         </div>
 
