@@ -13,8 +13,9 @@ const Room = () => {
   const [searchParams] = useSearchParams();
   const playerName =
     searchParams.get("name") || "Player_" + Math.floor(Math.random() * 1000);
+  const playerId = localStorage.getItem("playerId") || crypto.randomUUID();
 
-  const { players, connected } = useRoomSocket(roomId!, gameId!, playerName);
+  const { players, connected } = useRoomSocket(roomId!, gameId!, playerName, playerId);
   const { roomState, rollDice, bankScore, newBanned, isMyTurn } =
     usePigGameSocket(roomId!, playerName);
 
