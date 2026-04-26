@@ -1,10 +1,14 @@
 // src/hooks/usePigGameSocket.ts
 import { useEffect, useState } from "react";
-import { SOCKET_EVENTS } from "../constants";
+import { GameId, SOCKET_EVENTS } from "../constants";
 import { useSocket } from "../context/SocketContext";
 import { PigRoomState } from "../types/pigTypes";
 
-export const usePigGameSocket = (roomId: string, playerName: string) => {
+export const usePigGameSocket = (
+  roomId: string,
+  playerName: string,
+  gameId?: string
+) => {
   const socket = useSocket();
   const [roomState, setRoomState] = useState<PigRoomState | null>(null);
   const [connected, setConnected] = useState(false);
@@ -13,7 +17,7 @@ export const usePigGameSocket = (roomId: string, playerName: string) => {
     roomState?.players[roomState.activePlayerIndex]?.id === socket?.id;
 
   useEffect(() => {
-    if (!roomId || !playerName || !socket) return;
+    if (gameId !== GameId.PIG_GAME || !roomId || !playerName || !socket) return;
 
     if (!socket.connected) {
       socket.connect();
@@ -43,7 +47,7 @@ export const usePigGameSocket = (roomId: string, playerName: string) => {
       socket.off(SOCKET_EVENTS.PIG.ROOM_CLOSED);
       socket.disconnect();
     };
-  }, [roomId, playerName, socket]);
+  }, [roomId, playerName, gameId, socket]);
 
   const rollDice = () => socket?.emit(SOCKET_EVENTS.PIG.ROLL_DICE, { roomId });
   const bankScore = () =>

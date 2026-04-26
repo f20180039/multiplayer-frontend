@@ -1,7 +1,9 @@
 // src/pages/Room.tsx
 import { useParams, useSearchParams } from "react-router-dom";
 import { PlayersList } from "../components/PlayersList";
+import { DiceEliminationGameRoom } from "../components/games/dice-elimination/DiceEliminationGameRoom";
 import { PigGameRoom } from "../components/games/pig/PigGameRoom";
+import { useDiceEliminationSocket } from "../hooks/useDiceEliminationSocket";
 import { usePigGameSocket } from "../hooks/usePigGameSocket";
 import { useRoomSocket } from "../hooks/useRoomSocket";
 import { GameId } from "../constants";
@@ -17,7 +19,15 @@ const Room = () => {
 
   const { players, connected } = useRoomSocket(roomId!, gameId!, playerName, playerId);
   const { roomState, rollDice, bankScore, newBanned, isMyTurn } =
-    usePigGameSocket(roomId!, playerName);
+    usePigGameSocket(roomId!, playerName, gameId);
+  const {
+    roomState: diceEliminationRoomState,
+    rollDice: rollEliminationDice,
+    startNextRound,
+    resetGame,
+    isMyTurn: isDiceEliminationTurn,
+    isLeader: isDiceEliminationLeader,
+  } = useDiceEliminationSocket(roomId!, playerName, gameId);
 
   const { messages, sendMessage } = useChatSocket(roomId!, playerName);
   const [chatInput, setChatInput] = useState("");
@@ -85,20 +95,36 @@ const Room = () => {
               isGameOver={isGameOver}
             />
           )}
+          {gameId === GameId.DICE_ELIMINATION && diceEliminationRoomState && (
+            <DiceEliminationGameRoom
+              roomState={diceEliminationRoomState}
+              rollDice={rollEliminationDice}
+              startNextRound={startNextRound}
+              resetGame={resetGame}
+              isMyTurn={isDiceEliminationTurn}
+              isLeader={isDiceEliminationLeader}
+            />
+          )}
         </div>
 
         {/* Right: Chat Section */}
         <div className="ans-w-1/4 ans-p-4">
-          <h3 className="ans-text-2 ans-font-inter-2">Chat</h3>
+          <h3 className="ans-text-2 ans-font-inter-2">Room Chat</h3>
           <div className="ans-border ans-rounded-md ans-p-2 ans-h-48 ans-overflow-y-auto ans-mb-2 ans-bg-White ans-text-left">
-            {messages.map((msg, idx) => (
-              <div key={idx} className="ans-text-0 ans-text-Blue_gray-800">
-                <span className="ans-font-inter-3 ans-text-Blue_gray-800">
-                  {msg.playerName}:
-                </span>{" "}
-                {msg.message}
-              </div>
-            ))}
+            {messages.length > 0 ? (
+              messages.map((msg, idx) => (
+                <div key={idx} className="ans-text-0 ans-text-Blue_gray-800">
+                  <span className="ans-font-inter-3 ans-text-Blue_gray-800">
+                    {msg.playerName}:
+                  </span>{" "}
+                  {msg.message}
+                </div>
+              ))
+            ) : (
+              <p className="ans-text-0 ans-text-Blue_gray-400">
+                No messages yet.
+              </p>
+            )}
           </div>
           <div className="ans-flex ans-gap-2">
             <input

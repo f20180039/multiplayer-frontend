@@ -1,54 +1,89 @@
-# React + TypeScript + Vite
+# Multiplayer Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React + Vite frontend for the multiplayer game platform. It handles Google sign-in, guest mode, room creation/joining, chat, reconnect behavior, and game UI.
 
-Currently, two official plugins are available:
+## Run Locally
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Make sure Redis and the backend are running first. From the project root:
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+```bash
+docker compose up redis -d
+cd multiplayer-backend
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Then start the frontend:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
+```bash
+cd multiplayer-frontend
+npm install
+npm run dev
 ```
+
+The app runs at `http://localhost:5173`.
+
+## Environment Variables
+
+Create `multiplayer-frontend/.env`:
+
+```env
+VITE_BACKEND_URL=http://localhost:4000
+VITE_FIREBASE_API_KEY=your-web-api-key
+VITE_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=your-firebase-project-id
+```
+
+Get these values from Firebase Console > Project settings > General > Your apps > Web app.
+
+## Commands
+
+```bash
+npm run dev        # Vite development server
+npm run build      # lint, type-check, and production build
+npm run preview    # preview production build locally
+npm run lint
+npm run type-check
+```
+
+## Public Hosting
+
+Host the built frontend on Vercel, Netlify, Cloudflare Pages, Firebase Hosting, or any static host.
+
+Production env example:
+
+```env
+VITE_BACKEND_URL=https://your-backend-domain.com
+VITE_FIREBASE_API_KEY=your-web-api-key
+VITE_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=your-firebase-project-id
+```
+
+After deployment, add the public frontend domain in Firebase Authentication > Settings > Authorized domains.
+
+## Key Files
+
+- `src/main.tsx`: app entry and provider setup
+- `src/App.tsx`: routes for lobby and room pages
+- `src/config/firebase.ts`: Firebase client initialization
+- `src/context/SocketContext.tsx`: Socket.IO client, auth handshake, reconnect settings
+- `src/pages/GameLobby.tsx`: login, guest mode, create room, join room
+- `src/pages/Room.tsx`: room layout and game selection rendering
+- `src/hooks/useRoomSocket.ts`: join room and reconnect rejoin behavior
+- `src/hooks/useChatSocket.ts`: chat state
+- `src/hooks/usePigGameSocket.ts`: Pig game socket state/actions
+- `src/components/games/pig/PigGameRoom.tsx`: Pig game UI
+- `src/constants/index.ts`: frontend game IDs and socket event names
+
+## Auth Flow
+
+- Google login uses Firebase `signInWithPopup`, then sends the ID token in the Socket.IO auth payload.
+- Guest mode stores `playerId`, `playerName`, and `authType` in localStorage.
+- The socket reconnects automatically and refreshes the auth payload before reconnect attempts.
+
+## Adding Another Game UI
+
+1. Add the game ID and socket events in `src/constants/index.ts`.
+2. Create a hook in `src/hooks/` for game-specific socket events.
+3. Create a component under `src/components/games/`.
+4. Render the component from `src/pages/Room.tsx`.

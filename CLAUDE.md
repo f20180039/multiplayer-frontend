@@ -33,3 +33,24 @@ VITE_FIREBASE_API_KEY=
 VITE_FIREBASE_AUTH_DOMAIN=
 VITE_FIREBASE_PROJECT_ID=
 ```
+
+## Local Run
+Make sure Redis and the backend are running, then start Vite:
+
+```bash
+cd multiplayer-frontend
+npm install
+npm run dev
+```
+
+Frontend URL:
+
+```text
+http://localhost:5173
+```
+
+## Public Hosting
+- Deploy the built static app to Vercel, Netlify, Cloudflare Pages, Firebase Hosting, or another static host
+- Set `VITE_BACKEND_URL` to the public backend URL
+- Keep Firebase web config in deployment environment variables
+- Add the deployed frontend domain to Firebase Authentication > Settings > Authorized domains
