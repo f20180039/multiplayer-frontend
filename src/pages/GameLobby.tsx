@@ -13,6 +13,7 @@ const GameLobby = () => {
   const navigate = useNavigate();
   const [playerName, setPlayerName] = useState("");
   const [roomLink, setRoomLink] = useState("");
+  const [selectedGameId, setSelectedGameId] = useState<string>(GameId.PIG_GAME);
   const [isLoading, setIsLoading] = useState(false);
   const [firebaseUser, setFirebaseUser] = useState<User | null>(null);
   const [authReady, setAuthReady] = useState(false);
@@ -105,7 +106,7 @@ const GameLobby = () => {
         gameId = parts[roomIndex + 1];
         roomId = parts[roomIndex + 2];
       } else {
-        gameId = GameId.PIG_GAME;
+        gameId = selectedGameId;
         roomId = roomLink.trim();
       }
 
@@ -189,16 +190,42 @@ const GameLobby = () => {
       {/* Join Room Section */}
       <div className="ans-bg-Blue_gray-50 ans-rounded-2xl ans-p-6 ans-shadow-sm ans-space-y-4">
         <h2 className="ans-text-3 ans-font-inter-2">Join a Room</h2>
+
+        {/* Game selector - only shown when not pasting full URL */}
+        {!roomLink.includes("http") && (
+          <div className="ans-space-y-2">
+            <label className="ans-text-sm ans-font-inter-1 ans-text-Blue_gray-600">
+              Select Game:
+            </label>
+            <select
+              value={selectedGameId}
+              onChange={(e) => setSelectedGameId(e.target.value)}
+              className="ans-p-3 ans-rounded-lg ans-border ans-border-Blue_gray-200 ans-w-full ans-shadow-sm ans-bg-White"
+            >
+              {GamesArray.map((game) => (
+                <option key={game.id} value={game.id}>
+                  {game.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
         <input
           type="text"
-          placeholder="Paste room link or ID"
+          placeholder="Paste room link or room ID"
           value={roomLink}
           onChange={(e) => setRoomLink(e.target.value)}
           className="ans-p-3 ans-rounded-lg ans-border ans-border-Blue_gray-200 ans-w-full ans-shadow-sm"
         />
+
+        <p className="ans-text-xs ans-text-Blue_gray-500">
+          💡 Tip: Enter a full invite link OR just the room ID with game selection above
+        </p>
+
         <button
           onClick={handleJoinRoom}
-          className="ans-bg-Success-500 hover:ans-bg-Success-600 ans-transition-colors ans-text-White ans-px-4 ans-py-2 ans-rounded-lg ans-font-inter-1"
+          className="ans-bg-Success-500 hover:ans-bg-Success-600 ans-transition-colors ans-text-White ans-px-4 ans-py-2 ans-rounded-lg ans-font-inter-1 ans-w-full"
           disabled={isLoading}
         >
           {isLoading ? "Checking..." : "Join Room"}

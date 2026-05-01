@@ -8,16 +8,30 @@ import { usePigGameSocket } from "../hooks/usePigGameSocket";
 import { useRoomSocket } from "../hooks/useRoomSocket";
 import { GameId } from "../constants";
 import { useChatSocket } from "../hooks/useChatSocket";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 
 const Room = () => {
   const { gameId, roomId } = useParams();
   const [searchParams] = useSearchParams();
   const playerName =
     searchParams.get("name") || "Player_" + Math.floor(Math.random() * 1000);
-  const playerId = localStorage.getItem("playerId") || crypto.randomUUID();
 
-  const { players, connected } = useRoomSocket(roomId!, gameId!, playerName, playerId);
+  // Get or create persistent playerId (stable across renders)
+  const playerId = useMemo(() => {
+    let id = localStorage.getItem("playerId");
+    if (!id) {
+      id = crypto.randomUUID();
+      localStorage.setItem("playerId", id);
+    }
+    return id;
+  }, []);
+
+  const { players, connected } = useRoomSocket(
+    roomId!,
+    gameId!,
+    playerName,
+    playerId,
+  );
   const { roomState, rollDice, bankScore, newBanned, isMyTurn } =
     usePigGameSocket(roomId!, playerName, gameId);
   const {
@@ -32,6 +46,7 @@ const Room = () => {
   const { messages, sendMessage } = useChatSocket(roomId!, playerName);
   const [chatInput, setChatInput] = useState("");
   const [copied, setCopied] = useState(false);
+  const [copiedRoomId, setCopiedRoomId] = useState(false);
 
   const currentPlayer =
     roomState?.players[roomState.activePlayerIndex]?.name || "Unknown";
@@ -43,6 +58,14 @@ const Room = () => {
     navigator.clipboard.writeText(url).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  // 📋 Copy just the room ID
+  const handleCopyRoomId = () => {
+    navigator.clipboard.writeText(roomId!).then(() => {
+      setCopiedRoomId(true);
+      setTimeout(() => setCopiedRoomId(false), 2000);
     });
   };
 
@@ -63,13 +86,19 @@ const Room = () => {
         Status: {connected ? "Connected ✅" : "Connecting..."}
       </p>
 
-      {/* 📎 Copy Link */}
-      <div className="ans-mt-4">
+      {/* 📎 Copy Buttons */}
+      <div className="ans-mt-4 ans-flex ans-gap-3 ans-justify-center">
         <button
           onClick={handleCopyLink}
-          className="ans-bg-Blue-600 ans-text-White ans-px-4 ans-py-1 ans-rounded hover:ans-bg-Blue-700"
+          className="ans-bg-Blue-600 ans-text-White ans-px-4 ans-py-2 ans-rounded hover:ans-bg-Blue-700 ans-transition-colors"
         >
-          {copied ? "Link Copied!" : "Copy Invite Link"}
+          {copied ? "✓ Link Copied!" : "📋 Copy Invite Link"}
+        </button>
+        <button
+          onClick={handleCopyRoomId}
+          className="ans-bg-Green-600 ans-text-White ans-px-4 ans-py-2 ans-rounded hover:ans-bg-Green-700 ans-transition-colors"
+        >
+          {copiedRoomId ? "✓ ID Copied!" : "🔑 Copy Room ID"}
         </button>
       </div>
 
