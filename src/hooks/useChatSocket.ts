@@ -1,7 +1,7 @@
 // src/hooks/useChatSocket.ts
 import { useEffect, useState } from "react";
 import { SOCKET_EVENTS } from "../constants";
-import { useSocket } from "../context/SocketContext";
+import { useSocket } from "../context/socketUtils";
 
 export interface ChatMessage {
   playerName: string;

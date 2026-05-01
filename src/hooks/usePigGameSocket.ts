@@ -1,7 +1,7 @@
 // src/hooks/usePigGameSocket.ts
 import { useEffect, useState } from "react";
 import { GameId, SOCKET_EVENTS } from "../constants";
-import { useSocket } from "../context/SocketContext";
+import { useSocket } from "../context/socketUtils";
 import { PigRoomState } from "../types/pigTypes";
 
 export const usePigGameSocket = (

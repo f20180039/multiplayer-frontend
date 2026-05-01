@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { GameId, SOCKET_EVENTS } from "../constants";
-import { useSocket } from "../context/SocketContext";
+import { useSocket } from "../context/socketUtils";
 import { DiceEliminationRoomState } from "../types/diceEliminationTypes";
 
 export const useDiceEliminationSocket = (

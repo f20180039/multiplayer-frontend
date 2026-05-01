@@ -1,4 +1,4 @@
-import { useSocket } from "../context/SocketContext";
+import { useSocket } from "../context/socketUtils";
 
 interface Player {
   id: string;

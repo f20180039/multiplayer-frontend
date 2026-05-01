@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { SOCKET_EVENTS } from "../constants";
-import { useSocket, getAuthPayload } from "../context/SocketContext";
+import { useSocket, getAuthPayload } from "../context/socketUtils";
 
 interface PlayerStatus {
   id: string;
