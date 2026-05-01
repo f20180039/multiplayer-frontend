@@ -1,10 +1,8 @@
-import { createContext, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { io, Socket } from "socket.io-client";
-import { getAuthPayload } from "./socketUtils";
+import { getAuthPayload, SocketContext } from "./socketUtils";
 
 const URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:4000";
-
-export const SocketContext = createContext<Socket | null>(null);
 
 export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   const [socket, setSocket] = useState<Socket | null>(null);
