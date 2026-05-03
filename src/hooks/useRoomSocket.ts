@@ -19,6 +19,7 @@ export const useRoomSocket = (
   const [players, setPlayers] = useState<Record<string, string>>({});
   const [playerStatuses, setPlayerStatuses] = useState<PlayerStatus[]>([]);
   const [connected, setConnected] = useState(false);
+  const [roomError, setRoomError] = useState<string | null>(null);
   const [reconnecting, setReconnecting] = useState(false);
   const hasJoinedRef = useRef(false);
 
@@ -41,14 +42,14 @@ export const useRoomSocket = (
       if (!socket.connected) {
         socket.auth = await getAuthPayload();
         socket.connect();
+        return;
       }
       joinRoom();
     };
 
-    connectAndJoin();
-
     const onRoomJoined = () => {
       setConnected(true);
+      setRoomError(null);
       setReconnecting(false);
       hasJoinedRef.current = true;
       socket.emit(SOCKET_EVENTS.REGISTER_GAME_HANDLER, { gameId });
@@ -62,7 +63,18 @@ export const useRoomSocket = (
             playerName,
           });
         }
+        if (gameId === GameId.PANIC_POTATO) {
+          socket.emit(SOCKET_EVENTS.PANIC_POTATO.JOIN_GAME, {
+            roomId,
+            playerName,
+          });
+        }
       }, 0);
+    };
+
+    const onRoomFull = () => {
+      setConnected(false);
+      setRoomError("This Panic Potato room is full.");
     };
 
     const onRoomPlayers = (players: Record<string, string>) => {
@@ -92,14 +104,18 @@ export const useRoomSocket = (
     };
 
     socket.on(SOCKET_EVENTS.ROOM_JOINED, onRoomJoined);
+    socket.on(SOCKET_EVENTS.ROOM_FULL, onRoomFull);
     socket.on(SOCKET_EVENTS.ROOM_PLAYERS, onRoomPlayers);
     socket.on(SOCKET_EVENTS.PLAYER_STATUS_UPDATE, onPlayerStatusUpdate);
     socket.on(SocketConnectionEvent.CONNECT, onReconnect);
     socket.on(SocketConnectionEvent.DISCONNECT, onDisconnect);
     socket.io.on(SocketConnectionEvent.RECONNECT_FAILED, onReconnectFailed);
 
+    connectAndJoin();
+
     return () => {
       socket.off(SOCKET_EVENTS.ROOM_JOINED, onRoomJoined);
+      socket.off(SOCKET_EVENTS.ROOM_FULL, onRoomFull);
       socket.off(SOCKET_EVENTS.ROOM_PLAYERS, onRoomPlayers);
       socket.off(SOCKET_EVENTS.PLAYER_STATUS_UPDATE, onPlayerStatusUpdate);
       socket.off(SocketConnectionEvent.CONNECT, onReconnect);
@@ -123,5 +139,5 @@ export const useRoomSocket = (
           lastSeen: Date.now(),
         }));
 
-  return { players: playersForList, connected, reconnecting };
+  return { players: playersForList, connected, reconnecting, roomError };
 };

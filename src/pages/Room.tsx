@@ -5,6 +5,7 @@ import { useParams, useSearchParams } from "react-router-dom";
 import { PlayersList } from "../components/PlayersList";
 import { ThemeToggle } from "../components/ThemeToggle";
 import { DiceEliminationGameRoom } from "../components/games/dice-elimination/DiceEliminationGameRoom";
+import { PanicPotatoGameRoom } from "../components/games/panic-potato/PanicPotatoGameRoom";
 import { PigGameRoom } from "../components/games/pig/PigGameRoom";
 import {
   APP_ROUTES,
@@ -14,6 +15,7 @@ import {
 } from "../constants";
 import { useChatSocket } from "../hooks/useChatSocket";
 import { useDiceEliminationSocket } from "../hooks/useDiceEliminationSocket";
+import { usePanicPotatoSocket } from "../hooks/usePanicPotatoSocket";
 import { usePigGameSocket } from "../hooks/usePigGameSocket";
 import { useRoomSocket } from "../hooks/useRoomSocket";
 
@@ -33,7 +35,7 @@ const Room = () => {
     return id;
   }, []);
 
-  const { players, connected } = useRoomSocket(
+  const { players, connected, roomError: roomSocketError } = useRoomSocket(
     roomId!,
     gameId!,
     playerName,
@@ -49,6 +51,15 @@ const Room = () => {
     isMyTurn: isDiceEliminationTurn,
     isLeader: isDiceEliminationLeader,
   } = useDiceEliminationSocket(roomId!, playerName, gameId);
+  const {
+    myPlayerId,
+    roomError: panicRoomError,
+    roomState: panicPotatoRoomState,
+    passPotato,
+    rematch,
+    sendInput,
+    activatePowerUp,
+  } = usePanicPotatoSocket(roomId!, playerName, gameId);
 
   const { messages, sendMessage } = useChatSocket(roomId!, playerName);
   const [chatInput, setChatInput] = useState("");
@@ -89,7 +100,9 @@ const Room = () => {
   if (!connected) {
     return (
       <div className="app-shell room-shell">
-        <div className="loading-state">Connecting to room...</div>
+        <div className="loading-state">
+          {roomSocketError || "Connecting to room..."}
+        </div>
       </div>
     );
   }
@@ -172,6 +185,18 @@ const Room = () => {
                 resetGame={resetGame}
                 isMyTurn={isDiceEliminationTurn}
                 isLeader={isDiceEliminationLeader}
+              />
+            )}
+            {gameId === GameId.PANIC_POTATO && panicPotatoRoomState && (
+              <PanicPotatoGameRoom
+                roomId={roomId!}
+                roomState={panicPotatoRoomState}
+                myPlayerId={myPlayerId}
+                sendInput={sendInput}
+                passPotato={passPotato}
+                activatePowerUp={activatePowerUp}
+                rematch={rematch}
+                roomError={panicRoomError}
               />
             )}
           </section>

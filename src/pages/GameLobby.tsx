@@ -27,7 +27,9 @@ const GameLobby = () => {
   const navigate = useNavigate();
   const [playerName, setPlayerName] = useState("");
   const [roomLink, setRoomLink] = useState("");
-  const [selectedGameId, setSelectedGameId] = useState<string>(GameId.PIG_GAME);
+  const [selectedGameId, setSelectedGameId] = useState<string>(
+    GameId.PANIC_POTATO
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [firebaseUser, setFirebaseUser] = useState<User | null>(null);
   const [authReady, setAuthReady] = useState(false);
@@ -95,7 +97,8 @@ const GameLobby = () => {
       return;
     }
 
-    const roomId = uuidv4();
+    const roomId =
+      gameId === GameId.PANIC_POTATO ? createShortRoomCode() : uuidv4();
     navigate(APP_ROUTES.roomWithName(gameId, roomId, playerName));
   };
 
@@ -328,3 +331,11 @@ const GameLobby = () => {
 };
 
 export default GameLobby;
+
+const createShortRoomCode = () => {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  return Array.from({ length: 6 }, () => {
+    const index = Math.floor(Math.random() * alphabet.length);
+    return alphabet[index];
+  }).join("");
+};

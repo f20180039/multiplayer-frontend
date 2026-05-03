@@ -2,7 +2,21 @@
 export enum GameId {
   PIG_GAME = "pig-game",
   DICE_ELIMINATION = "dice-elimination",
+  PANIC_POTATO = "panic-potato",
 }
+
+export const PANIC_POTATO_LIMITS = {
+  MIN_PLAYERS: 2,
+  MAX_PLAYERS: 8,
+  STARTING_LIVES: 3,
+  FUSE_MIN_MS: 8000,
+  FUSE_MAX_MS: 22000,
+  RECEIVE_COOLDOWN_MS: 500,
+  DASH_COOLDOWN_MS: 2500,
+  GLUE_LOCK_MS: 1500,
+  ROUND_START_COUNTDOWN_MS: 3000,
+  POST_EXPLOSION_DELAY_MS: 2000,
+} as const;
 
 export enum AuthType {
   GOOGLE = "google",
@@ -47,6 +61,7 @@ export const API_ROUTES = {
 
 export const GamesArray = [
   // { id: "tic-tac-toe", name: "Tic Tac Toe" },
+  { id: GameId.PANIC_POTATO, name: "Panic Potato" },
   { id: GameId.PIG_GAME, name: "Pig Game" },
   { id: GameId.DICE_ELIMINATION, name: "Dice Elimination" },
 ];
@@ -96,5 +111,16 @@ export const SOCKET_EVENTS = {
     ROLL_DICE: "dice-elimination:roll_dice",
     RESET_GAME: "dice-elimination:reset_game",
     UPDATE: "dice-elimination:update",
+  },
+
+  // Specific game events (Panic Potato)
+  PANIC_POTATO: {
+    JOIN_GAME: "panic-potato:join_game",
+    INPUT: "panic-potato:input",
+    PASS_POTATO: "panic-potato:pass_potato",
+    USE_POWER_UP: "panic-potato:use_power_up",
+    REMATCH: "panic-potato:rematch",
+    UPDATE: "panic-potato:update",
+    ERROR: "panic-potato:error",
   },
 } as const;
