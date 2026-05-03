@@ -4,6 +4,47 @@ export enum GameId {
   DICE_ELIMINATION = "dice-elimination",
 }
 
+export enum AuthType {
+  GOOGLE = "google",
+  GUEST = "guest",
+}
+
+export enum LocalStorageKey {
+  PLAYER_NAME = "playerName",
+  PLAYER_ID = "playerId",
+  AUTH_TYPE = "authType",
+  THEME = "theme",
+}
+
+export enum RouteSegment {
+  ROOM = "room",
+}
+
+export enum SocketConnectionEvent {
+  CONNECT = "connect",
+  DISCONNECT = "disconnect",
+  RECONNECT_FAILED = "reconnect_failed",
+}
+
+export const PLAYER_DEFAULTS = {
+  NAME: "Player",
+  GUEST_NAME: "Guest",
+  ROOM_NAME_PLACEHOLDER: "YourName",
+  GENERATED_NAME_PREFIX: "Player_",
+} as const;
+
+export const APP_ROUTES = {
+  room: (gameId: string, roomId: string) =>
+    `/${RouteSegment.ROOM}/${gameId}/${roomId}`,
+  roomWithName: (gameId: string, roomId: string, playerName: string) =>
+    `${APP_ROUTES.room(gameId, roomId)}?name=${encodeURIComponent(playerName)}`,
+} as const;
+
+export const API_ROUTES = {
+  checkRoomExistence: (gameId: string, roomId: string) =>
+    `/api/check-room-existence/${gameId}/${roomId}`,
+} as const;
+
 export const GamesArray = [
   // { id: "tic-tac-toe", name: "Tic Tac Toe" },
   { id: GameId.PIG_GAME, name: "Pig Game" },

@@ -29,15 +29,16 @@ export const DiceEliminationGameRoom = ({
   const recentRolls = [...roomState.rollHistory].reverse().slice(0, 8);
 
   return (
-    <div className="ans-mt-6 ans-space-y-5">
-      <div className="ans-space-y-2 ans-rounded ans-border ans-border-Blue_gray-100 ans-bg-White ans-p-4">
-        <h3 className="ans-text-xl ans-font-semibold">Dice Elimination</h3>
-        <p className="ans-text-Blue_gray-600">Round {roomState.round}</p>
-        <p className="ans-font-inter-1 ans-text-Blue_gray-800">
-          {roomState.lastMessage}
-        </p>
+    <div className="game-panel">
+      <div className="section-heading">
+        <h2>Dice Elimination</h2>
+        <span className="status-pill">Round {roomState.round}</span>
+      </div>
+
+      <div className="game-callout">
+        <p>{roomState.lastMessage}</p>
         {currentPlayer && roomState.phase === "rolling" && (
-          <p className="ans-rounded ans-bg-Blue-50 ans-p-3 ans-font-inter-2 ans-text-Blue-700">
+          <p className="turn-note">
             {isMyTurn
               ? "Your turn. Roll the dice."
               : `${currentPlayer.name}'s turn to roll.`}
@@ -45,77 +46,54 @@ export const DiceEliminationGameRoom = ({
         )}
       </div>
 
-      <div className="ans-grid ans-gap-3 ans-text-left">
+      <div className="elimination-list">
         {roomState.players.map((player) => (
           <div
             key={player.id}
-            className={`ans-rounded ans-border ans-p-3 ${
-              player.isEliminated
-                ? "ans-bg-Red-50 ans-border-Red-200 ans-opacity-70"
-                : "ans-bg-White ans-border-Blue_gray-100"
-            }`}
+            className="elimination-row"
+            data-eliminated={player.isEliminated}
           >
-            <div className="ans-flex ans-items-center ans-justify-between ans-gap-3">
-              <div>
-                <strong>{player.name}</strong>
-                {!player.isActive && (
-                  <span className="ans-ml-2 ans-text-sm ans-text-Blue_gray-400">
-                    Offline
-                  </span>
-                )}
-              </div>
-              <div className="ans-text-right">
-                <div className="ans-text-2 ans-font-inter-3">
-                  {player.roll ?? player.lastRoundRoll ?? "-"}
-                </div>
-                <div className="ans-text-sm ans-text-Blue_gray-500">
-                  {player.isEliminated
-                    ? "Eliminated"
-                    : player.id === roomState.currentTurnPlayerId
-                      ? "Turn now"
-                      : "In game"}
-                </div>
-              </div>
+            <div>
+              <strong>{player.name}</strong>
+              {!player.isActive && <span className="muted">Offline</span>}
+            </div>
+            <div className="roll-cell">
+              <strong>{player.roll ?? player.lastRoundRoll ?? "-"}</strong>
+              <span>
+                {player.isEliminated
+                  ? "Eliminated"
+                  : player.id === roomState.currentTurnPlayerId
+                    ? "Turn now"
+                    : "In game"}
+              </span>
             </div>
           </div>
         ))}
       </div>
 
-      <div className="ans-grid ans-gap-4 ans-text-left md:ans-grid-cols-2">
-        <div className="ans-rounded ans-border ans-border-Blue_gray-100 ans-bg-White ans-p-4">
-          <h4 className="ans-font-inter-2 ans-text-Blue_gray-800">
-            Current Round Rolls
-          </h4>
+      <div className="history-grid">
+        <div className="history-panel">
+          <h3>Current Round Rolls</h3>
           {currentRoundRolls.length > 0 ? (
-            <ul className="ans-mt-3 ans-space-y-2">
+            <ul>
               {currentRoundRolls.map((record) => (
-                <li
-                  key={`${record.round}-${record.playerId}-${record.rolledAt}`}
-                  className="ans-flex ans-justify-between ans-gap-3 ans-text-Blue_gray-700"
-                >
+                <li key={`${record.round}-${record.playerId}-${record.rolledAt}`}>
                   <span>{record.playerName}</span>
                   <strong>{record.roll}</strong>
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="ans-mt-3 ans-text-sm ans-text-Blue_gray-500">
-              No rolls yet this round.
-            </p>
+            <p className="empty-state">No rolls yet this round.</p>
           )}
         </div>
 
-        <div className="ans-rounded ans-border ans-border-Blue_gray-100 ans-bg-White ans-p-4">
-          <h4 className="ans-font-inter-2 ans-text-Blue_gray-800">
-            Roll History
-          </h4>
+        <div className="history-panel">
+          <h3>Roll History</h3>
           {recentRolls.length > 0 ? (
-            <ul className="ans-mt-3 ans-space-y-2">
+            <ul>
               {recentRolls.map((record) => (
-                <li
-                  key={`${record.round}-${record.playerId}-${record.rolledAt}`}
-                  className="ans-flex ans-justify-between ans-gap-3 ans-text-sm ans-text-Blue_gray-700"
-                >
+                <li key={`${record.round}-${record.playerId}-${record.rolledAt}`}>
                   <span>
                     Round {record.round}: {record.playerName}
                   </span>
@@ -124,25 +102,20 @@ export const DiceEliminationGameRoom = ({
               ))}
             </ul>
           ) : (
-            <p className="ans-mt-3 ans-text-sm ans-text-Blue_gray-500">
-              Rolls will appear here as players take turns.
-            </p>
+            <p className="empty-state">Rolls will appear here.</p>
           )}
         </div>
       </div>
 
-      {winner && (
-        <p className="ans-text-lg ans-font-bold ans-text-Success-600">
-          Winner: {winner.name}
-        </p>
-      )}
+      {winner && <p className="winner-banner">Winner: {winner.name}</p>}
 
-      <div className="ans-flex ans-flex-wrap ans-gap-3 ans-justify-center">
+      <div className="game-actions">
         {roomState.phase === "rolling" && (
           <button
+            type="button"
             onClick={rollDice}
             disabled={!isMyTurn}
-            className="ans-bg-Blue-500 ans-text-White ans-px-4 ans-py-2 ans-rounded disabled:ans-opacity-50 disabled:ans-cursor-not-allowed"
+            className="action-button primary"
           >
             Roll Dice
           </button>
@@ -150,8 +123,9 @@ export const DiceEliminationGameRoom = ({
 
         {roomState.phase === "round_result" && (
           <button
+            type="button"
             onClick={startNextRound}
-            className="ans-bg-Success-500 ans-text-White ans-px-4 ans-py-2 ans-rounded"
+            className="action-button accent"
           >
             Start Next Round
           </button>
@@ -159,8 +133,9 @@ export const DiceEliminationGameRoom = ({
 
         {isLeader && (
           <button
+            type="button"
             onClick={resetGame}
-            className="ans-bg-Blue_gray-600 ans-text-White ans-px-4 ans-py-2 ans-rounded"
+            className="action-button secondary"
           >
             Reset Game
           </button>

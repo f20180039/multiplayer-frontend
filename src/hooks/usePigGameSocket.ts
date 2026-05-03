@@ -11,23 +11,11 @@ export const usePigGameSocket = (
 ) => {
   const socket = useSocket();
   const [roomState, setRoomState] = useState<PigRoomState | null>(null);
-  const [connected, setConnected] = useState(false);
-
   const isMyTurn =
     roomState?.players[roomState.activePlayerIndex]?.id === socket?.id;
 
   useEffect(() => {
     if (gameId !== GameId.PIG_GAME || !roomId || !playerName || !socket) return;
-
-    if (!socket.connected) {
-      socket.connect();
-    }
-
-    socket.emit(SOCKET_EVENTS.JOIN_ROOM, {
-      gameId: "pig-game",
-      roomId,
-      playerName,
-    });
 
     socket.on(SOCKET_EVENTS.PIG.UPDATE, (room: PigRoomState) => {
       console.log("Room State Updated:", room);
@@ -39,13 +27,9 @@ export const usePigGameSocket = (
       setRoomState(null);
     });
 
-    socket.on("connect", () => setConnected(true));
-    socket.on("disconnect", () => setConnected(false));
-
     return () => {
       socket.off(SOCKET_EVENTS.PIG.UPDATE);
       socket.off(SOCKET_EVENTS.PIG.ROOM_CLOSED);
-      socket.disconnect();
     };
   }, [roomId, playerName, gameId, socket]);
 
@@ -58,7 +42,6 @@ export const usePigGameSocket = (
   return {
     isMyTurn,
     roomState,
-    connected,
     rollDice,
     bankScore,
     newBanned,

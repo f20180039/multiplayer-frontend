@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { SOCKET_EVENTS } from "../constants";
+import { GameId, SOCKET_EVENTS, SocketConnectionEvent } from "../constants";
 import { useSocket, getAuthPayload } from "../context/socketUtils";
 
 interface PlayerStatus {
@@ -29,7 +29,12 @@ export const useRoomSocket = (
     }
 
     const joinRoom = () => {
-      socket.emit(SOCKET_EVENTS.JOIN_ROOM, { roomId, playerName, playerId, gameId });
+      socket.emit(SOCKET_EVENTS.JOIN_ROOM, {
+        roomId,
+        playerName,
+        playerId,
+        gameId,
+      });
     };
 
     const connectAndJoin = async () => {
@@ -47,6 +52,17 @@ export const useRoomSocket = (
       setReconnecting(false);
       hasJoinedRef.current = true;
       socket.emit(SOCKET_EVENTS.REGISTER_GAME_HANDLER, { gameId });
+      setTimeout(() => {
+        if (gameId === GameId.PIG_GAME) {
+          socket.emit(SOCKET_EVENTS.PIG.JOIN_ROOM, { roomId, playerName });
+        }
+        if (gameId === GameId.DICE_ELIMINATION) {
+          socket.emit(SOCKET_EVENTS.DICE_ELIMINATION.JOIN_GAME, {
+            roomId,
+            playerName,
+          });
+        }
+      }, 0);
     };
 
     const onRoomPlayers = (players: Record<string, string>) => {
@@ -78,17 +94,17 @@ export const useRoomSocket = (
     socket.on(SOCKET_EVENTS.ROOM_JOINED, onRoomJoined);
     socket.on(SOCKET_EVENTS.ROOM_PLAYERS, onRoomPlayers);
     socket.on(SOCKET_EVENTS.PLAYER_STATUS_UPDATE, onPlayerStatusUpdate);
-    socket.on("connect", onReconnect);
-    socket.on("disconnect", onDisconnect);
-    socket.io.on("reconnect_failed", onReconnectFailed);
+    socket.on(SocketConnectionEvent.CONNECT, onReconnect);
+    socket.on(SocketConnectionEvent.DISCONNECT, onDisconnect);
+    socket.io.on(SocketConnectionEvent.RECONNECT_FAILED, onReconnectFailed);
 
     return () => {
       socket.off(SOCKET_EVENTS.ROOM_JOINED, onRoomJoined);
       socket.off(SOCKET_EVENTS.ROOM_PLAYERS, onRoomPlayers);
       socket.off(SOCKET_EVENTS.PLAYER_STATUS_UPDATE, onPlayerStatusUpdate);
-      socket.off("connect", onReconnect);
-      socket.off("disconnect", onDisconnect);
-      socket.io.off("reconnect_failed", onReconnectFailed);
+      socket.off(SocketConnectionEvent.CONNECT, onReconnect);
+      socket.off(SocketConnectionEvent.DISCONNECT, onDisconnect);
+      socket.io.off(SocketConnectionEvent.RECONNECT_FAILED, onReconnectFailed);
 
       if (socket.connected) {
         socket.disconnect();

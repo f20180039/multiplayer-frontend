@@ -1,15 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { io, Socket } from "socket.io-client";
+import { clientEnv } from "../config/env";
 import { getAuthPayload, SocketContext } from "./socketUtils";
-
-const URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:4000";
 
 export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   const [socket, setSocket] = useState<Socket | null>(null);
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
-    const s = io(URL, {
+    const s = io(clientEnv.backendUrl, {
       autoConnect: false,
       reconnection: true,
       reconnectionAttempts: 10,

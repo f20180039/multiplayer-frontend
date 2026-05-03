@@ -21,53 +21,59 @@ export const PigGameRoom = ({
   isGameOver,
 }: PigGameRoomProps) => {
   return (
-    <div className="ans-mt-6 ans-space-y-4">
-      <h3 className="ans-text-xl ans-font-semibold">
-        🎲 Dice: {roomState.diceRoll ?? "-"}
-      </h3>
-      <p>Banned Number: {roomState.bannedNumber}</p>
-      <p>
-        Current Turn:{" "}
-        <span className="ans-font-medium ans-text-Blue-600">
-          {currentPlayer}
-        </span>
-      </p>
+    <div className="game-panel">
+      <div className="section-heading">
+        <h2>Pig Game</h2>
+        <span className="status-pill">Dice {roomState.diceRoll ?? "-"}</span>
+      </div>
+      <div className="score-strip">
+        <div>
+          <p className="label">Banned number</p>
+          <strong>{roomState.bannedNumber}</strong>
+        </div>
+        <div>
+          <p className="label">Current turn</p>
+          <strong>{currentPlayer}</strong>
+        </div>
+      </div>
 
-      <ul className="ans-list-disc ans-list-inside ans-text-left ans-max-w-md ans-mx-auto">
+      <ul className="score-list">
         {roomState.players.map((p) => (
-          <li key={p.id}>
-            <strong>{p.name}</strong> — Frozen: {p.frozenScore}, Temp:{" "}
-            {p.tempScore}
+          <li key={p.id} className="score-row">
+            <strong>{p.name}</strong>
+            <span>Frozen {p.frozenScore}</span>
+            <span>Temp {p.tempScore}</span>
           </li>
         ))}
       </ul>
 
       {roomState.winner && (
-        <p className="ans-text-lg ans-font-bold ans-text-Purple-600">
-          🎉 Winner: {roomState.winner}
-        </p>
+        <p className="winner-banner">Winner: {roomState.winner}</p>
       )}
 
       {!isGameOver && (
-        <div className="ans-flex ans-gap-4 ans-justify-center ans-mt-4">
+        <div className="game-actions">
           <button
+            type="button"
             onClick={rollDice}
             disabled={!isMyTurn}
-            className="ans-bg-Blue-500 ans-text-White ans-px-4 ans-py-2 ans-rounded disabled:ans-opacity-50 disabled:ans-cursor-not-allowed"
+            className="action-button primary"
           >
             Roll
           </button>
           <button
+            type="button"
             onClick={bankScore}
             disabled={!isMyTurn}
-            className="ans-bg-Success-500 ans-text-White ans-px-4 ans-py-2 ans-rounded disabled:ans-opacity-50 disabled:ans-cursor-not-allowed"
+            className="action-button accent"
           >
             Bank
           </button>
           <button
+            type="button"
             onClick={newBanned}
             disabled={!isMyTurn}
-            className="ans-bg-Error-500 ans-text-White ans-px-4 ans-py-2 ans-rounded disabled:ans-opacity-50 disabled:ans-cursor-not-allowed"
+            className="action-button danger"
           >
             New Banned
           </button>

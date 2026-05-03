@@ -1,27 +1,34 @@
 // src/pages/Room.tsx
+import { useMemo, useState } from "react";
+import { FiCheckCircle, FiCopy, FiHash, FiSend, FiWifi } from "react-icons/fi";
 import { useParams, useSearchParams } from "react-router-dom";
 import { PlayersList } from "../components/PlayersList";
+import { ThemeToggle } from "../components/ThemeToggle";
 import { DiceEliminationGameRoom } from "../components/games/dice-elimination/DiceEliminationGameRoom";
 import { PigGameRoom } from "../components/games/pig/PigGameRoom";
+import {
+  APP_ROUTES,
+  GameId,
+  LocalStorageKey,
+  PLAYER_DEFAULTS,
+} from "../constants";
+import { useChatSocket } from "../hooks/useChatSocket";
 import { useDiceEliminationSocket } from "../hooks/useDiceEliminationSocket";
 import { usePigGameSocket } from "../hooks/usePigGameSocket";
 import { useRoomSocket } from "../hooks/useRoomSocket";
-import { GameId } from "../constants";
-import { useChatSocket } from "../hooks/useChatSocket";
-import { useState, useMemo } from "react";
 
 const Room = () => {
   const { gameId, roomId } = useParams();
   const [searchParams] = useSearchParams();
   const playerName =
-    searchParams.get("name") || "Player_" + Math.floor(Math.random() * 1000);
+    searchParams.get("name") ||
+    `${PLAYER_DEFAULTS.GENERATED_NAME_PREFIX}${Math.floor(Math.random() * 1000)}`;
 
-  // Get or create persistent playerId (stable across renders)
   const playerId = useMemo(() => {
-    let id = localStorage.getItem("playerId");
+    let id = localStorage.getItem(LocalStorageKey.PLAYER_ID);
     if (!id) {
       id = crypto.randomUUID();
-      localStorage.setItem("playerId", id);
+      localStorage.setItem(LocalStorageKey.PLAYER_ID, id);
     }
     return id;
   }, []);
@@ -30,7 +37,7 @@ const Room = () => {
     roomId!,
     gameId!,
     playerName,
-    playerId,
+    playerId
   );
   const { roomState, rollDice, bankScore, newBanned, isMyTurn } =
     usePigGameSocket(roomId!, playerName, gameId);
@@ -49,19 +56,22 @@ const Room = () => {
   const [copiedRoomId, setCopiedRoomId] = useState(false);
 
   const currentPlayer =
-    roomState?.players[roomState.activePlayerIndex]?.name || "Unknown";
+    roomState?.players[roomState.activePlayerIndex]?.name ||
+    PLAYER_DEFAULTS.NAME;
   const isGameOver = Boolean(roomState?.winner);
 
-  // 📋 Copy invite link
   const handleCopyLink = () => {
-    const url = `${window.location.origin}/room/${gameId}/${roomId}?name=YourName`;
+    const url = `${window.location.origin}${APP_ROUTES.roomWithName(
+      gameId!,
+      roomId!,
+      PLAYER_DEFAULTS.ROOM_NAME_PLACEHOLDER
+    )}`;
     navigator.clipboard.writeText(url).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     });
   };
 
-  // 📋 Copy just the room ID
   const handleCopyRoomId = () => {
     navigator.clipboard.writeText(roomId!).then(() => {
       setCopiedRoomId(true);
@@ -75,104 +85,135 @@ const Room = () => {
       setChatInput("");
     }
   };
-  if (!connected)
-    return <p className="ans-text-Error-500">Connecting to room...</p>;
+
+  if (!connected) {
+    return (
+      <div className="app-shell room-shell">
+        <div className="loading-state">Connecting to room...</div>
+      </div>
+    );
+  }
 
   return (
-    <div className="ans-p-8 ans-text-center">
-      <h2 className="ans-text-2 ans-font-inter-3">Game: {gameId}</h2>
-      <p className="ans-text-0">Room ID: {roomId}</p>
-      <p className="ans-mt-2 ans-text-Success-600">
-        Status: {connected ? "Connected ✅" : "Connecting..."}
-      </p>
-
-      {/* 📎 Copy Buttons */}
-      <div className="ans-mt-4 ans-flex ans-gap-3 ans-justify-center">
-        <button
-          onClick={handleCopyLink}
-          className="ans-bg-Blue-600 ans-text-White ans-px-4 ans-py-2 ans-rounded hover:ans-bg-Blue-700 ans-transition-colors"
-        >
-          {copied ? "✓ Link Copied!" : "📋 Copy Invite Link"}
-        </button>
-        <button
-          onClick={handleCopyRoomId}
-          className="ans-bg-Green-600 ans-text-White ans-px-4 ans-py-2 ans-rounded hover:ans-bg-Green-700 ans-transition-colors"
-        >
-          {copiedRoomId ? "✓ ID Copied!" : "🔑 Copy Room ID"}
-        </button>
-      </div>
-
-      {/* Flexbox Layout */}
-      <div className="ans-flex ans-justify-between ans-mt-8">
-        {/* Left: Player List */}
-        <div className="ans-w-1/4 ans-p-4">
-          {players && Object.keys(players).length > 0 && (
-            <PlayersList players={players} />
-          )}
-        </div>
-
-        {/* Middle: Game Area */}
-        <div className="ans-w-1/2 ans-p-4">
-          {gameId === GameId.PIG_GAME && roomState && (
-            <PigGameRoom
-              roomState={roomState}
-              rollDice={rollDice}
-              bankScore={bankScore}
-              newBanned={newBanned}
-              isMyTurn={isMyTurn}
-              currentPlayer={currentPlayer}
-              isGameOver={isGameOver}
-            />
-          )}
-          {gameId === GameId.DICE_ELIMINATION && diceEliminationRoomState && (
-            <DiceEliminationGameRoom
-              roomState={diceEliminationRoomState}
-              rollDice={rollEliminationDice}
-              startNextRound={startNextRound}
-              resetGame={resetGame}
-              isMyTurn={isDiceEliminationTurn}
-              isLeader={isDiceEliminationLeader}
-            />
-          )}
-        </div>
-
-        {/* Right: Chat Section */}
-        <div className="ans-w-1/4 ans-p-4">
-          <h3 className="ans-text-2 ans-font-inter-2">Room Chat</h3>
-          <div className="ans-border ans-rounded-md ans-p-2 ans-h-48 ans-overflow-y-auto ans-mb-2 ans-bg-White ans-text-left">
-            {messages.length > 0 ? (
-              messages.map((msg, idx) => (
-                <div key={idx} className="ans-text-0 ans-text-Blue_gray-800">
-                  <span className="ans-font-inter-3 ans-text-Blue_gray-800">
-                    {msg.playerName}:
-                  </span>{" "}
-                  {msg.message}
-                </div>
-              ))
-            ) : (
-              <p className="ans-text-0 ans-text-Blue_gray-400">
-                No messages yet.
-              </p>
-            )}
+    <div className="app-shell room-shell">
+      <header className="topbar">
+        <div className="brand-lockup">
+          <span className="brand-mark">MG</span>
+          <div>
+            <p className="eyebrow">Room</p>
+            <h1>{gameId}</h1>
           </div>
-          <div className="ans-flex ans-gap-2">
-            <input
-              type="text"
-              value={chatInput}
-              onChange={(e) => setChatInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSend()}
-              placeholder="Type your message..."
-              className="ans-border ans-rounded ans-p-1 ans-flex-1 ans-text-Blue_gray-800"
-            />
+        </div>
+        <ThemeToggle />
+      </header>
+
+      <main className="room-layout">
+        <section className="room-meta-panel">
+          <div>
+            <p className="eyebrow">Session ID</p>
+            <h2>{roomId}</h2>
+          </div>
+          <div className="room-actions">
+            <span className="status-pill success">
+              <FiWifi aria-hidden="true" />
+              Connected
+            </span>
             <button
-              onClick={handleSend}
-              className="ans-bg-Blue-500 ans-text-White ans-px-4 ans-rounded"
+              type="button"
+              onClick={handleCopyLink}
+              className="action-button secondary"
             >
-              Send
+              {copied ? (
+                <FiCheckCircle aria-hidden="true" />
+              ) : (
+                <FiCopy aria-hidden="true" />
+              )}
+              <span>{copied ? "Link copied" : "Copy invite"}</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleCopyRoomId}
+              className="action-button secondary"
+            >
+              {copiedRoomId ? (
+                <FiCheckCircle aria-hidden="true" />
+              ) : (
+                <FiHash aria-hidden="true" />
+              )}
+              <span>{copiedRoomId ? "ID copied" : "Copy ID"}</span>
             </button>
           </div>
+        </section>
+
+        <div className="room-grid">
+          <aside className="room-sidebar">
+            {players && Object.keys(players).length > 0 && (
+              <PlayersList players={players} />
+            )}
+          </aside>
+
+          <section className="game-stage">
+            {gameId === GameId.PIG_GAME && roomState && (
+              <PigGameRoom
+                roomState={roomState}
+                rollDice={rollDice}
+                bankScore={bankScore}
+                newBanned={newBanned}
+                isMyTurn={isMyTurn}
+                currentPlayer={currentPlayer}
+                isGameOver={isGameOver}
+              />
+            )}
+            {gameId === GameId.DICE_ELIMINATION && diceEliminationRoomState && (
+              <DiceEliminationGameRoom
+                roomState={diceEliminationRoomState}
+                rollDice={rollEliminationDice}
+                startNextRound={startNextRound}
+                resetGame={resetGame}
+                isMyTurn={isDiceEliminationTurn}
+                isLeader={isDiceEliminationLeader}
+              />
+            )}
+          </section>
+
+          <aside className="chat-panel">
+            <div className="section-heading">
+              <h2>Room Chat</h2>
+              <span className="status-pill subtle">{messages.length}</span>
+            </div>
+            <div className="chat-feed">
+              {messages.length > 0 ? (
+                messages.map((msg, idx) => (
+                  <div key={`${msg.playerName}-${idx}`} className="chat-line">
+                    <strong>{msg.playerName}</strong>
+                    <span>{msg.message}</span>
+                  </div>
+                ))
+              ) : (
+                <p className="empty-state">No messages yet.</p>
+              )}
+            </div>
+            <div className="chat-compose">
+              <input
+                type="text"
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSend()}
+                placeholder="Type your message..."
+                className="control-field"
+              />
+              <button
+                type="button"
+                onClick={handleSend}
+                className="icon-action"
+                aria-label="Send message"
+              >
+                <FiSend aria-hidden="true" />
+              </button>
+            </div>
+          </aside>
         </div>
-      </div>
+      </main>
     </div>
   );
 };

@@ -29,6 +29,7 @@ Create `multiplayer-frontend/.env`:
 
 ```env
 VITE_BACKEND_URL=http://localhost:4000
+VITE_DEFAULT_THEME=aurora
 VITE_FIREBASE_API_KEY=your-web-api-key
 VITE_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
 VITE_FIREBASE_PROJECT_ID=your-firebase-project-id
@@ -54,6 +55,7 @@ Production env example:
 
 ```env
 VITE_BACKEND_URL=https://your-backend-domain.com
+VITE_DEFAULT_THEME=aurora
 VITE_FIREBASE_API_KEY=your-web-api-key
 VITE_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
 VITE_FIREBASE_PROJECT_ID=your-firebase-project-id

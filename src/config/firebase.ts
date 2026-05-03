@@ -7,11 +7,12 @@ import {
   onAuthStateChanged,
   User,
 } from "firebase/auth";
+import { clientEnv } from "./env";
 
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  apiKey: clientEnv.firebase.apiKey,
+  authDomain: clientEnv.firebase.authDomain,
+  projectId: clientEnv.firebase.projectId,
 };
 
 const app = initializeApp(firebaseConfig);

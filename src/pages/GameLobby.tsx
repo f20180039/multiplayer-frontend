@@ -1,13 +1,27 @@
-import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { v4 as uuidv4 } from "uuid";
-import { GameId, GamesArray } from "../constants";
-import { signInWithGoogle, signOut, onAuthChange } from "../config/firebase";
 import type { User } from "firebase/auth";
-
-const PLAYER_NAME_KEY = "playerName";
-const PLAYER_ID_KEY = "playerId";
-const AUTH_TYPE_KEY = "authType";
+import { useNavigate } from "react-router-dom";
+import { v4 as uuidv4 } from "uuid";
+import {
+  FiArrowRight,
+  FiLogIn,
+  FiLogOut,
+  FiPlus,
+  FiUser,
+} from "react-icons/fi";
+import { ThemeToggle } from "../components/ThemeToggle";
+import { clientEnv } from "../config/env";
+import { onAuthChange, signInWithGoogle, signOut } from "../config/firebase";
+import {
+  API_ROUTES,
+  APP_ROUTES,
+  AuthType,
+  GameId,
+  GamesArray,
+  LocalStorageKey,
+  PLAYER_DEFAULTS,
+  RouteSegment,
+} from "../constants";
 
 const GameLobby = () => {
   const navigate = useNavigate();
@@ -18,43 +32,44 @@ const GameLobby = () => {
   const [firebaseUser, setFirebaseUser] = useState<User | null>(null);
   const [authReady, setAuthReady] = useState(false);
 
-  // Listen to Firebase auth state
   useEffect(() => {
     const unsubscribe = onAuthChange((user) => {
       setFirebaseUser(user);
       setAuthReady(true);
       if (user) {
-        // Google-authenticated user
-        localStorage.setItem(PLAYER_NAME_KEY, user.displayName || "Player");
-        localStorage.setItem(PLAYER_ID_KEY, user.uid);
-        localStorage.setItem(AUTH_TYPE_KEY, "google");
-        setPlayerName(user.displayName || "Player");
+        const displayName = user.displayName || PLAYER_DEFAULTS.NAME;
+        localStorage.setItem(LocalStorageKey.PLAYER_NAME, displayName);
+        localStorage.setItem(LocalStorageKey.PLAYER_ID, user.uid);
+        localStorage.setItem(LocalStorageKey.AUTH_TYPE, AuthType.GOOGLE);
+        setPlayerName(displayName);
       }
     });
     return () => unsubscribe();
   }, []);
 
-  // Generate or retrieve persistent playerId for guests
   useEffect(() => {
-    if (firebaseUser) return; // Skip for Google users
-    let playerId = localStorage.getItem(PLAYER_ID_KEY);
+    if (firebaseUser) return;
+
+    let playerId = localStorage.getItem(LocalStorageKey.PLAYER_ID);
     if (!playerId) {
       playerId = crypto.randomUUID();
-      localStorage.setItem(PLAYER_ID_KEY, playerId);
+      localStorage.setItem(LocalStorageKey.PLAYER_ID, playerId);
     }
-    localStorage.setItem(AUTH_TYPE_KEY, "guest");
+    localStorage.setItem(LocalStorageKey.AUTH_TYPE, AuthType.GUEST);
   }, [firebaseUser]);
 
   useEffect(() => {
-    if (firebaseUser) return; // Name managed by Firebase for Google users
-    const savedName = localStorage.getItem(PLAYER_NAME_KEY);
+    if (firebaseUser) return;
+
+    const savedName = localStorage.getItem(LocalStorageKey.PLAYER_NAME);
     if (savedName) setPlayerName(savedName);
   }, [firebaseUser]);
 
   useEffect(() => {
     if (firebaseUser) return;
+
     if (playerName.trim()) {
-      localStorage.setItem(PLAYER_NAME_KEY, playerName.trim());
+      localStorage.setItem(LocalStorageKey.PLAYER_NAME, playerName.trim());
     }
   }, [playerName, firebaseUser]);
 
@@ -68,9 +83,9 @@ const GameLobby = () => {
 
   const handleSignOut = async () => {
     await signOut();
-    localStorage.removeItem(AUTH_TYPE_KEY);
-    localStorage.removeItem(PLAYER_ID_KEY);
-    localStorage.removeItem(PLAYER_NAME_KEY);
+    localStorage.removeItem(LocalStorageKey.AUTH_TYPE);
+    localStorage.removeItem(LocalStorageKey.PLAYER_ID);
+    localStorage.removeItem(LocalStorageKey.PLAYER_NAME);
     setPlayerName("");
   };
 
@@ -79,14 +94,15 @@ const GameLobby = () => {
       alert("Please enter your name first.");
       return;
     }
+
     const roomId = uuidv4();
-    navigate(`/room/${gameId}/${roomId}?name=${encodeURIComponent(playerName)}`);
+    navigate(APP_ROUTES.roomWithName(gameId, roomId, playerName));
   };
 
   const checkRoomExistence = async (gameId: string, roomId: string) => {
     try {
       const res = await fetch(
-        `/api/check-room-existence/${gameId}/${roomId}`
+        `${clientEnv.backendUrl}${API_ROUTES.checkRoomExistence(gameId, roomId)}`
       );
       return res.ok;
     } catch {
@@ -102,7 +118,7 @@ const GameLobby = () => {
       if (roomLink.includes("http")) {
         const url = new URL(roomLink);
         const parts = url.pathname.split("/").filter(Boolean);
-        const roomIndex = parts.indexOf("room");
+        const roomIndex = parts.indexOf(RouteSegment.ROOM);
         gameId = parts[roomIndex + 1];
         roomId = parts[roomIndex + 2];
       } else {
@@ -128,9 +144,8 @@ const GameLobby = () => {
         return;
       }
 
-      // Save player name for refresh/rejoin
-      localStorage.setItem(PLAYER_NAME_KEY, playerName.trim());
-      navigate(`/room/${gameId}/${roomId}?name=${encodeURIComponent(playerName)}`);
+      localStorage.setItem(LocalStorageKey.PLAYER_NAME, playerName.trim());
+      navigate(APP_ROUTES.roomWithName(gameId, roomId, playerName));
     } catch (error) {
       alert("Invalid input. Please enter a valid URL or room ID. " + error);
       setIsLoading(false);
@@ -139,119 +154,175 @@ const GameLobby = () => {
 
   if (!authReady) {
     return (
-      <div className="ans-p-8 ans-max-w-xl ans-mx-auto ans-text-center">
-        Loading...
+      <div className="app-shell">
+        <div className="loading-state">Loading lobby...</div>
       </div>
     );
   }
 
   return (
-    <div className="ans-p-8 ans-max-w-xl ans-mx-auto ans-space-y-8 ans-text-Blue_gray-800 ans-font-mario">
-      <h1 className="ans-text-3 ans-font-inter-3 text-center ans-text-Blue_gray-200">
-        Game Lobby
-      </h1>
-
-      {/* Auth Section */}
-      <div className="ans-bg-Blue_gray-50 ans-rounded-2xl ans-p-6 ans-shadow-sm ans-space-y-4">
-        {firebaseUser ? (
-          <div className="ans-flex ans-items-center ans-justify-between">
-            <span className="ans-font-inter-1">
-              Signed in as <strong>{firebaseUser.displayName}</strong>
-            </span>
-            <button
-              onClick={handleSignOut}
-              className="ans-bg-Red-500 hover:ans-bg-Red-600 ans-transition-colors ans-text-White ans-px-4 ans-py-2 ans-rounded-lg"
-            >
-              Sign Out
-            </button>
+    <div className="app-shell lobby-shell">
+      <header className="topbar">
+        <div className="brand-lockup">
+          <span className="brand-mark">MG</span>
+          <div>
+            <p className="eyebrow">Multiplayer suite</p>
+            <h1>Game Lobby</h1>
           </div>
-        ) : (
-          <div className="ans-space-y-4">
-            <button
-              onClick={handleGoogleSignIn}
-              className="ans-bg-Blue-500 hover:ans-bg-Blue-600 ans-transition-colors ans-text-White ans-px-4 ans-py-2 ans-rounded-lg ans-w-full"
-            >
-              Sign in with Google
-            </button>
-            <div className="ans-text-center ans-text-Blue_gray-400 ans-text-sm">
-              or play as guest
+        </div>
+        <ThemeToggle />
+      </header>
+
+      <main className="lobby-layout">
+        <section className="hero-panel">
+          <div className="hero-copy">
+            <p className="eyebrow">Rooms, chat, reconnects</p>
+            <h2>Start a session that feels ready before the first roll.</h2>
+          </div>
+          <div className="hero-stats">
+            <div>
+              <span>{GamesArray.length}</span>
+              <p>Games</p>
             </div>
+            <div>
+              <span>{firebaseUser ? "Google" : "Guest"}</span>
+              <p>Mode</p>
+            </div>
+          </div>
+        </section>
+
+        <section className="surface-panel auth-panel">
+          <div className="section-heading">
+            <h2>Player</h2>
+            <span className="status-pill">
+              {firebaseUser ? "Signed in" : "Guest ready"}
+            </span>
+          </div>
+
+          {firebaseUser ? (
+            <div className="account-row">
+              <div className="avatar-token">
+                {(firebaseUser.displayName || PLAYER_DEFAULTS.NAME)
+                  .slice(0, 1)
+                  .toUpperCase()}
+              </div>
+              <div>
+                <p className="label">Signed in as</p>
+                <strong>{firebaseUser.displayName}</strong>
+              </div>
+              <button
+                type="button"
+                onClick={handleSignOut}
+                className="action-button danger"
+              >
+                <FiLogOut aria-hidden="true" />
+                <span>Sign out</span>
+              </button>
+            </div>
+          ) : (
+            <div className="stack">
+              <button
+                type="button"
+                onClick={handleGoogleSignIn}
+                className="action-button primary full-width"
+              >
+                <FiLogIn aria-hidden="true" />
+                <span>Sign in with Google</span>
+              </button>
+              <label className="field-label" htmlFor="player-name">
+                Display name
+              </label>
+              <div className="input-with-icon">
+                <FiUser aria-hidden="true" />
+                <input
+                  id="player-name"
+                  type="text"
+                  placeholder="Your name"
+                  value={playerName}
+                  onChange={(e) => setPlayerName(e.target.value)}
+                  className="control-field"
+                />
+              </div>
+            </div>
+          )}
+        </section>
+
+        <section className="surface-panel join-panel">
+          <div className="section-heading">
+            <h2>Join Room</h2>
+            <span className="status-pill subtle">Invite or room ID</span>
+          </div>
+
+          {!roomLink.includes("http") && (
+            <div className="field-group">
+              <label className="field-label" htmlFor="game-selector">
+                Game
+              </label>
+              <select
+                id="game-selector"
+                value={selectedGameId}
+                onChange={(e) => setSelectedGameId(e.target.value)}
+                className="control-field"
+              >
+                {GamesArray.map((game) => (
+                  <option key={game.id} value={game.id}>
+                    {game.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          <div className="field-group">
+            <label className="field-label" htmlFor="room-link">
+              Room link or ID
+            </label>
             <input
+              id="room-link"
               type="text"
-              placeholder="Your name"
-              value={playerName}
-              onChange={(e) => setPlayerName(e.target.value)}
-              className="ans-p-3 ans-rounded-lg ans-border ans-border-Blue_gray-200 ans-w-full ans-text-Blue_gray-800 ans-shadow-sm"
+              placeholder="Paste room link or room ID"
+              value={roomLink}
+              onChange={(e) => setRoomLink(e.target.value)}
+              className="control-field"
             />
           </div>
-        )}
-      </div>
 
-      {/* Join Room Section */}
-      <div className="ans-bg-Blue_gray-50 ans-rounded-2xl ans-p-6 ans-shadow-sm ans-space-y-4">
-        <h2 className="ans-text-3 ans-font-inter-2">Join a Room</h2>
+          <button
+            type="button"
+            onClick={handleJoinRoom}
+            className="action-button accent full-width"
+            disabled={isLoading}
+          >
+            <FiArrowRight aria-hidden="true" />
+            <span>{isLoading ? "Checking..." : "Join room"}</span>
+          </button>
+        </section>
 
-        {/* Game selector - only shown when not pasting full URL */}
-        {!roomLink.includes("http") && (
-          <div className="ans-space-y-2">
-            <label className="ans-text-sm ans-font-inter-1 ans-text-Blue_gray-600">
-              Select Game:
-            </label>
-            <select
-              value={selectedGameId}
-              onChange={(e) => setSelectedGameId(e.target.value)}
-              className="ans-p-3 ans-rounded-lg ans-border ans-border-Blue_gray-200 ans-w-full ans-shadow-sm ans-bg-White"
-            >
-              {GamesArray.map((game) => (
-                <option key={game.id} value={game.id}>
-                  {game.name}
-                </option>
-              ))}
-            </select>
+        <section className="surface-panel create-panel">
+          <div className="section-heading">
+            <h2>Create Room</h2>
+            <span className="status-pill subtle">Choose a game</span>
           </div>
-        )}
-
-        <input
-          type="text"
-          placeholder="Paste room link or room ID"
-          value={roomLink}
-          onChange={(e) => setRoomLink(e.target.value)}
-          className="ans-p-3 ans-rounded-lg ans-border ans-border-Blue_gray-200 ans-w-full ans-shadow-sm"
-        />
-
-        <p className="ans-text-xs ans-text-Blue_gray-500">
-          💡 Tip: Enter a full invite link OR just the room ID with game selection above
-        </p>
-
-        <button
-          onClick={handleJoinRoom}
-          className="ans-bg-Success-500 hover:ans-bg-Success-600 ans-transition-colors ans-text-White ans-px-4 ans-py-2 ans-rounded-lg ans-font-inter-1 ans-w-full"
-          disabled={isLoading}
-        >
-          {isLoading ? "Checking..." : "Join Room"}
-        </button>
-      </div>
-
-      {/* Create Room Section */}
-      <div className="ans-bg-Blue_gray-50 ans-rounded-2xl ans-p-6 ans-shadow-sm ans-space-y-4">
-        <h2 className="ans-text-4 ans-font-semibold">Create a New Room</h2>
-        <ul className="ans-space-y-3">
-          {GamesArray.map((game) => (
-            <li
-              key={game.id}
-              className="ans-flex ans-items-center ans-justify-between ans-bg-White ans-p-3 ans-rounded-xl ans-shadow"
-            >
-              <span className="ans-font-inter-1">{game.name}</span>
-              <button
-                onClick={() => handleCreateRoom(game.id)}
-                className="ans-bg-Blue-500 hover:ans-bg-Blue-600 ans-transition-colors ans-text-White ans-px-4 ans-py-2 ans-rounded-lg"
-              >
-                Create Room
-              </button>
-            </li>
-          ))}
-        </ul>
-      </div>
+          <div className="game-list">
+            {GamesArray.map((game) => (
+              <article key={game.id} className="game-option">
+                <div>
+                  <p className="label">Game</p>
+                  <strong>{game.name}</strong>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleCreateRoom(game.id)}
+                  className="icon-action"
+                  aria-label={`Create ${game.name} room`}
+                >
+                  <FiPlus aria-hidden="true" />
+                </button>
+              </article>
+            ))}
+          </div>
+        </section>
+      </main>
     </div>
   );
 };

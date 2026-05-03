@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { GameId, SOCKET_EVENTS } from "../constants";
+import {
+  GameId,
+  LocalStorageKey,
+  SOCKET_EVENTS,
+} from "../constants";
 import { useSocket } from "../context/socketUtils";
 import { DiceEliminationRoomState } from "../types/diceEliminationTypes";
 
@@ -13,7 +17,10 @@ export const useDiceEliminationSocket = (
     useState<DiceEliminationRoomState | null>(null);
 
   const enabled = gameId === GameId.DICE_ELIMINATION;
-  const myPlayerId = useMemo(() => localStorage.getItem("playerId"), []);
+  const myPlayerId = useMemo(
+    () => localStorage.getItem(LocalStorageKey.PLAYER_ID),
+    []
+  );
 
   const isMyTurn = useMemo(
     () =>
@@ -26,15 +33,6 @@ export const useDiceEliminationSocket = (
   useEffect(() => {
     if (!enabled || !roomId || !playerName || !socket) return;
 
-    const joinGame = () => {
-      socket.emit(SOCKET_EVENTS.DICE_ELIMINATION.JOIN_GAME, {
-        roomId,
-        playerName,
-      });
-    };
-
-    joinGame();
-
     socket.on(
       SOCKET_EVENTS.DICE_ELIMINATION.UPDATE,
       (updatedRoom: DiceEliminationRoomState) => {
@@ -42,11 +40,8 @@ export const useDiceEliminationSocket = (
       }
     );
 
-    socket.on("connect", joinGame);
-
     return () => {
       socket.off(SOCKET_EVENTS.DICE_ELIMINATION.UPDATE);
-      socket.off("connect", joinGame);
     };
   }, [enabled, roomId, playerName, socket]);
 
